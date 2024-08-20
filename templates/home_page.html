@@ -1,0 +1,14 @@
+{% extends 'base.html'  %}
+{% block title %}Home Page{% endblock %}
+
+{%block content%} 
+
+<h1>Here is our survey. Read instructions and click the button to Start</h1>
+<p>Title of Survey : {{title}}</p>
+<p>Instructions : {{instructions}}</p>
+
+<form action="/questions/0">
+<button type="submit" >Start</button>
+</form>
+
+{%endblock%}
