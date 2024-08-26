@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, session
 from surveys import satisfaction_survey 
 
 app = Flask(__name__)
@@ -8,30 +8,40 @@ from flask_debugtoolbar import DebugToolbarExtension
 app.config['SECRET_KEY'] = "secret123"
 debug = DebugToolbarExtension(app)
 
-responses = []
+# responses = []
 
 
 @app.route('/')
 def home_page():
     """root page will show title, instructions, and button to start survey."""
+    session.pop('responses', None)
 
     title = satisfaction_survey.title
     instructions = satisfaction_survey.instructions
+
     return render_template('home_page.html', title=title, instructions=instructions)
+
+@app.route('/set-session', methods=["POST"])
+def set_session():
+    session["responses"] = []
+    return redirect('/question/0',)
 
 
 
 @app.route('/questions/<int:qid>')
 def question_page(qid):
-    """1st page that will ask a question."""
+    """show the current question."""
 
-    if len(responses) == len(satisfaction_survey.questions):
+    if 'responses' not in session:
+        session['responses'] = []
+
+    if len(session["responses"]) == len(satisfaction_survey.questions):
         return redirect('/thankyou')
     
-    if len(responses) != qid:
+    if len(session["responses"]) != qid:
         """checking to see if user is out of order, send them to correct question"""
         flash ("trying to access question out of order!", "error")
-        return redirect(f"/questions/{len(responses)}")
+        return redirect(f"/questions/{len(session['responses'])}")
     
     questions = satisfaction_survey.questions[qid]
     return render_template('question_page.html', questions=questions)
@@ -42,12 +52,15 @@ def question_page(qid):
 def add_answer():
     """add answers to responses list check if all questions have been answered and redirect to the appropriate page"""
     answer = request.form['answer']
-    responses.append(answer)
+    responses = session["responses"]
 
-    if len(responses) == len(satisfaction_survey.questions):
+    responses.append(answer)
+    session['responses'] = responses
+
+    if len(session["responses"]) == len(satisfaction_survey.questions):
         return redirect('/thankyou')
     else:
-        return redirect(f"/questions/{len(responses)}")
+        return redirect(f"/questions/{len(session['responses'])}")
 
 
 
